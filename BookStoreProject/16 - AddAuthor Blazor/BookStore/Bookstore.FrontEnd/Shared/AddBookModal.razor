@@ -1,0 +1,56 @@
+﻿
+@using Bookstore.FrontEnd.Clients;
+@using Bookstore.FrontEnd.DTO;
+@using Newtonsoft.Json;
+@inject BookStoreClient _http;
+
+<div>
+    <EditForm Model="bookDto" OnValidSubmit="SubmitForm">
+        <label for="Title">Title</label>
+        <br />
+        <InputText @bind-Value="bookDto.Title" />
+        <br /><br />
+        <label for="Description">Description</label>
+        <br />
+        <InputText @bind-Value="bookDto.Description" />
+        <br /><br />
+        <label for="AuthorId">Auteur</label>
+        <br />
+        <select for="bookDto" class="form-control"
+                @bind="@bookDto.AuthorId">
+            <option value=0 disabled selected hidden>
+                [Selectionnner un auteur]
+            </option>
+            @foreach (var author in authors)
+            {
+                <option value="@author.Id">
+                    @author.FirstName @author.LastName
+                </option>
+            }
+        </select>
+        <br /><br />
+        <button type="submit">Submit</button>
+        <MudButton @onclick="Cancel">Cancel</MudButton>
+    </EditForm>
+
+</div>
+
+@code {
+    private readonly BookCreationDTO bookDto = new();
+    private  List<AuthorDto> authors = new();
+    protected override async Task OnInitializedAsync()
+    {
+        authors = await _http.GetAllAuthors();
+    }
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
+    private async Task SubmitForm()
+    {
+        var result = await _http.AddBook(bookDto);
+
+        await BlazoredModal.CloseAsync(ModalResult.Ok(bookDto));
+    }
+
+    private async Task Cancel() => await BlazoredModal.CancelAsync();
+
+}

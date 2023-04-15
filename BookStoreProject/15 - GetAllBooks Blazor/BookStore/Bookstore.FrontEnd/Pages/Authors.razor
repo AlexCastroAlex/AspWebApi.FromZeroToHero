@@ -1,0 +1,28 @@
+﻿@page "/authors"
+@using Bookstore.FrontEnd.Clients;
+@using Bookstore.FrontEnd.DTO;
+@inject BookStoreClient _http;
+
+<PageTitle>Gestion des auteurs</PageTitle>
+<h3>Liste des auteurs</h3>
+
+<MudDataGrid T="AuthorDto" Items="@authors" Filterable="true" FilterMode="@DataGridFilterMode.ColumnFilterMenu" FilterCaseSensitivity="@DataGridFilterCaseSensitivity.Default">
+    <Columns>
+        <Column T="AuthorDto" Field="Id" Sortable="false" Hidden="true" Filterable="false" />
+        <Column T="AuthorDto" Field="FirstName" Title="Titre" />
+        <Column T="AuthorDto" Field="LastName" Title="Description" />
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="AuthorDto" />
+    </PagerContent>
+</MudDataGrid>
+
+
+@code {
+    private List<AuthorDto>? authors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        authors = await _http.GetAllAuthors();
+    }
+}

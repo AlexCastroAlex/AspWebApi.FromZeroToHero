@@ -1,0 +1,40 @@
+﻿@using Bookstore.FrontEnd.Clients;
+@using Bookstore.FrontEnd.DTO;
+@using Newtonsoft.Json;
+@inject BookStoreClient _http;
+
+
+<div>
+    <EditForm Model="authorDto" OnValidSubmit="SubmitForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <label for="FirstName">FirstName</label>
+        <br />
+        <InputText @bind-Value="authorDto.FirstName" />
+        <br /><br />
+        <label for="LastName">FirstName</label>
+        <br />
+        <InputText @bind-Value="authorDto.LastName" />
+        <br />
+        <button type="submit">Submit</button>
+        <MudButton @onclick="Cancel">Cancel</MudButton>
+    </EditForm>
+
+</div>
+
+
+@code {
+
+    private readonly AuthorCreationDTO authorDto = new();
+
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+ 
+    private async Task SubmitForm()
+    {
+        var result = await _http.AddAuthor(authorDto);
+
+        await BlazoredModal.CloseAsync(ModalResult.Ok(result));
+    }
+ 
+    private async Task Cancel() => await BlazoredModal.CancelAsync();
+}

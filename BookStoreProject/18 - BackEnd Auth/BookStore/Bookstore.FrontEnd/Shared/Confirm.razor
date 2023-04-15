@@ -1,0 +1,13 @@
+﻿
+
+<div>
+    <MudButton StartIcon="@Icons.Material.Filled.Delete"  Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitForm">Supprimer!</MudButton>
+    <MudButton StartIcon="@Icons.Material.Filled.Cancel"  Variant="Variant.Filled" Color="Color.Primary" OnClick="Cancel">Annuler</MudButton>
+
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+    private async Task SubmitForm() => await BlazoredModal.CloseAsync(ModalResult.Ok());
+    private async Task Cancel() => await BlazoredModal.CancelAsync();
+}

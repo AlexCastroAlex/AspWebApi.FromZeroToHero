@@ -1,0 +1,128 @@
+﻿@page "/books"
+@using Bookstore.FrontEnd.Clients;
+@using Bookstore.FrontEnd.DTO;
+@inject BookStoreClient _http;
+@inject IToastService toastService
+
+<PageTitle>Gestion des livres</PageTitle>
+
+<h3>Liste des livres</h3>
+
+<MudButton StartIcon="@Icons.Material.Filled.Add" EndIcon="@Icons.Material.Filled.Person" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAuthorModal">Ajouter un livre</MudButton>
+
+<MudDataGrid T="BookDto" Items="@books" Filterable="true" FilterMode="@DataGridFilterMode.ColumnFilterMenu" EditMode="@DataGridEditMode.Form" ReadOnly="false"
+             FilterCaseSensitivity="@DataGridFilterCaseSensitivity.Default" EditTrigger="@DataGridEditTrigger.Manual" Bordered="true" Dense="true" 
+             CommittedItemChanges="@CommitChanges">
+    <Columns>
+        <Column T="BookDto" Field="Id" Sortable="false" Hidden="true" Filterable="false" IsEditable="false" />
+        <HierarchyColumn T="BookDto" ButtonDisabledFunc="@(x => x.Author is null)" IsEditable="false" />
+        <Column T="BookDto" Field="Title" Title="Titre" />
+        <Column T="BookDto" Field="Description" Title="Description" />
+        <Column T="BookDto" CellClass="d-flex justify-end">
+            <CellTemplate>
+                <MudIconButton Size="@Size.Large" Icon="@Icons.Material.Outlined.Edit" OnClick="@context.Actions.StartEditingItem" />
+            </CellTemplate>
+        </Column>
+        <Column T="BookDto" CellClass="d-flex justify-end">
+            <CellTemplate>
+                <MudIconButton Size="@Size.Large" Icon="@Icons.Material.Outlined.Delete" OnClick="async ()=> await DeleteBook(context.Item.Id)" />
+            </CellTemplate>
+        </Column> 
+    </Columns>
+    <ChildRowContent>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Auteur :</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText>Prénom de l'auteur : @context.Item.Author?.FirstName</MudText>
+                <MudText>Nom de l'auteur : @context.Item.Author?.LastName</MudText>
+            </MudCardContent>
+        </MudCard>
+    </ChildRowContent>
+    <PagerContent>
+        <MudDataGridPager T="BookDto" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private List<BookDto>? books;
+    [CascadingParameter] IModalService Modal { get; set; } = default!;
+    protected override async Task OnInitializedAsync()
+    {
+        books = await _http.GetAllBooksAsync();
+    }
+    void StartedEditingItem(BookDto item)
+    {
+
+    }
+
+    private async Task CommitChanges(BookDto bookDto)
+    {
+        var result = await _http.EditBook(bookDto);
+        if(result is not null)
+        {
+            toastService.ShowSuccess("Livre modifié avec succès", "Modification en succès!");
+        }
+        else
+        {
+            toastService.ShowError("Erreur lors de la modification du livre", "Modification en erreur!");
+        }
+        books = await _http.GetAllBooksAsync();
+        StateHasChanged();
+    }
+
+    private async Task OpenAddAuthorModal()
+    {
+        var options = new ModalOptions()
+            {
+                Size = ModalSize.Medium,
+                Position = ModalPosition.Middle,
+                DisableBackgroundCancel = true,
+            };
+
+        var addAuthorModal = Modal.Show<AddBookModal>("Ajouter un livre", options);
+        var result = await addAuthorModal.Result;
+        if (result is not null)
+        {
+            books = await _http.GetAllBooksAsync();
+            StateHasChanged();
+            toastService.ShowSuccess("Livre créé avec succès", "Création en succès!");
+        }
+        else
+        {
+            toastService.ShowError("Erreur lors de la création du livre", "Création en erreur!");
+        }
+    }
+
+    private async Task DeleteBook(int bookId)
+    {
+        var options = new ModalOptions()
+            {
+                Size = ModalSize.Medium,
+                Position = ModalPosition.Middle,
+                DisableBackgroundCancel = true,
+            };
+        var modalConfirm = Modal.Show<Confirm>("Confirmez vous la suppression ?");
+        var modalResult = await modalConfirm.Result;
+        if (modalResult.Confirmed)
+        {
+            var result = await _http.DeleteBook(bookId);
+            if(result)
+            {
+                books = await _http.GetAllBooksAsync();
+                StateHasChanged();
+                toastService.ShowSuccess("Livre supprimé avec succès", "Suppression en succès!");
+            }
+            else
+            {
+                toastService.ShowError("Erreur lors de la suppression du livre", "Suppression en erreur!");
+            }
+        }
+        
+    }
+
+
+}

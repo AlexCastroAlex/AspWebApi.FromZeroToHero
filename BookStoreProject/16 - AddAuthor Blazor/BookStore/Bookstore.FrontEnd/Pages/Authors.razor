@@ -1,0 +1,109 @@
+﻿@page "/authors"
+@using Bookstore.FrontEnd.Clients;
+@using Bookstore.FrontEnd.DTO;
+@inject BookStoreClient _http;
+@inject IToastService toastService
+<PageTitle>Gestion des auteurs</PageTitle>
+<h3>Liste des auteurs</h3>
+
+<MudButton StartIcon="@Icons.Material.Filled.Add" EndIcon="@Icons.Material.Filled.Book" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAuthorModal">Ajouter un auteur</MudButton>
+
+
+<MudDataGrid T="AuthorDto" Items="@authors" Filterable="true" FilterMode="@DataGridFilterMode.ColumnFilterMenu" EditMode="@DataGridEditMode.Form"
+             FilterCaseSensitivity="@DataGridFilterCaseSensitivity.Default" Bordered="true" Dense="true" ReadOnly="false" CommittedItemChanges="CommitChanges">
+    <Columns>
+        <Column T="AuthorDto" Field="Id" Sortable="false" Hidden="true" Filterable="false" IsEditable="false"/>
+        <Column T="AuthorDto" Field="FirstName" Title="Titre" />
+        <Column T="AuthorDto" Field="LastName" Title="Description" />
+        <Column T="AuthorDto" CellClass="d-flex justify-end">
+            <CellTemplate>
+                <MudIconButton Size="@Size.Large" Icon="@Icons.Material.Outlined.Edit" OnClick="@context.Actions.StartEditingItem" />
+            </CellTemplate>
+        </Column>
+        <Column T="AuthorDto" CellClass="d-flex justify-end">
+            <CellTemplate>
+                <MudIconButton Size="@Size.Large" Icon="@Icons.Material.Outlined.Delete" OnClick="async ()=> await DeleteAuthor(context.Item.Id)" />
+            </CellTemplate>
+        </Column>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="AuthorDto" />
+    </PagerContent>
+</MudDataGrid>
+
+
+@code {
+    private List<AuthorDto>? authors;
+    [CascadingParameter] IModalService Modal { get; set; } = default!;
+    protected override async Task OnInitializedAsync()
+    {
+        authors = await _http.GetAllAuthors();
+    }
+
+    private async Task CommitChanges(AuthorDto AuthorDto)
+    {
+        var result = await _http.EditAuthor(AuthorDto);
+        if (result is not null)
+        {
+            toastService.ShowSuccess("Auteur modifié avec succès", "Modification en succès!");
+        }
+        else
+        {
+            toastService.ShowError("Erreur lors de la modification de l'auteur", "Modification en erreur!");
+        }
+        authors = await _http.GetAllAuthors();
+        StateHasChanged();
+    }
+
+    private async Task OpenAddAuthorModal()
+    {
+        var options = new ModalOptions()
+            {
+                Size = ModalSize.Medium,
+                Position = ModalPosition.Middle,
+                DisableBackgroundCancel =true,
+                AnimationType = ModalAnimationType.FadeInOut
+            };
+
+        var addBookodal = Modal.Show<AddAuthorModal>("Ajouter un auteur",options );
+        var result = await addBookodal.Result;
+        if(result is not null)
+        {
+            authors = await _http.GetAllAuthors();
+            StateHasChanged();
+            toastService.ShowSuccess("Auteur créé avec succès", "Création en succès!");
+        }
+        else
+        {
+            toastService.ShowError("Erreur lors de la création de l'auteur", "Création en erreur!"); 
+        }
+    }
+
+    private async Task DeleteAuthor(int authorId)
+    {
+        var options = new ModalOptions()
+            {
+                Size = ModalSize.Medium,
+                Position = ModalPosition.Middle,
+                DisableBackgroundCancel = true,
+            };
+        var modalConfirm = Modal.Show<Confirm>("Confirmez vous la suppression ?");
+        var modalResult = await modalConfirm.Result;
+        if (modalResult.Confirmed)
+        {
+            var result = await _http.DeleteAuthor(authorId);
+            if (result)
+            {
+                authors = await _http.GetAllAuthors();
+                StateHasChanged();
+                toastService.ShowSuccess("Auteur supprimé avec succès", "Suppression en succès!");
+            }
+            else
+            {
+                toastService.ShowError("Erreur lors de la suppression de l'auteur", "Suppression en erreur!");
+            }
+        }
+
+    }
+
+}

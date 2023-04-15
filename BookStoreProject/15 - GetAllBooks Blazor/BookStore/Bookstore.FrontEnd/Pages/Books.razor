@@ -1,0 +1,42 @@
+﻿@page "/books"
+@using Bookstore.FrontEnd.Clients;
+@using Bookstore.FrontEnd.DTO;
+@inject BookStoreClient _http;
+
+
+<PageTitle>Gestion des livres</PageTitle>
+
+<h3>Liste des livres</h3>
+<MudDataGrid T="BookDto" Items="@books" Filterable="true" FilterMode="@DataGridFilterMode.ColumnFilterMenu" FilterCaseSensitivity="@DataGridFilterCaseSensitivity.Default">
+    <Columns>
+        <Column T="BookDto" Field="Id" Sortable="false" Hidden="true" Filterable="false" />
+        <HierarchyColumn T="BookDto" ButtonDisabledFunc="@(x => x.Author is null)" />
+        <Column T="BookDto" Field="Title" Title="Titre" />
+        <Column T="BookDto" Field="Description" Title="Description" />
+    </Columns>
+    <ChildRowContent>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Auteur :</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudText>Prénom de l'auteur : @context.Item.Author.FirstName</MudText>
+                <MudText>Nom de l'auteur : @context.Item.Author.LastName</MudText>
+            </MudCardContent>
+        </MudCard>
+    </ChildRowContent>
+    <PagerContent>
+        <MudDataGridPager T="BookDto" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private List<BookDto>? books;
+
+    protected override async Task OnInitializedAsync()
+    {
+        books = await _http.GetAllBooksAsync();
+    }
+}
